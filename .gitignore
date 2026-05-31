@@ -1,0 +1,26 @@
+# MySQL данные
+mysql/
+docker-compose.yml
+
+# Логи
+*.log
+logs/
+
+# Конфиги с паролями
+includes/config.php
+
+# Загруженные файлы
+uploads/
+images/*.jpg
+images/*.png
+articles/*.pdf
+articles/*.docx
+
+# Временные файлы
+*.tmp
+*.swp
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
