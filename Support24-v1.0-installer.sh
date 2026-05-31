@@ -1,113 +1,155 @@
 #!/bin/bash
 
-# Скрипт установки Support24_system
-# Автор: LeManONE
-# Описание: Полная автоматическая установка веб-сервиса техподдержки
+# ============================================
+#   Support24_system - Установщик веб-сервиса
+#   Автор: LeManONE
+#   Telegram: @artemsmvrv
+# ============================================
 
-set -e  # Останавливаем скрипт при любой ошибке
+set -e
 
-# Цвета для вывода
+# Цвета
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-# Функция для вывода статуса
-log_success() {
-    echo -e "${GREEN}[✓] $1${NC}"
+# Функции
+print_banner() {
+    clear
+    echo -e "${CYAN}"
+    echo "╔══════════════════════════════════════════════════════════╗"
+    echo "║                                                          ║"
+    echo "║     ███████╗██╗   ██╗██████╗ ██████╗  ██████╗ ██████╗    ║"
+    echo "║     ██╔════╝██║   ██║██╔══██╗██╔══██╗██╔═══██╗██╔══██╗   ║"
+    echo "║     ███████╗██║   ██║██████╔╝██████╔╝██║   ██║██████╔╝    ║"
+    echo "║     ╚════██║██║   ██║██╔═══╝ ██╔═══╝ ██║   ██║██╔══██╗    ║"
+    echo "║     ███████║╚██████╔╝██║     ██║     ╚██████╔╝██║  ██║    ║"
+    echo "║     ╚══════╝ ╚═════╝ ╚═╝     ╚═╝      ╚═════╝ ╚═╝  ╚═╝    ║"
+    echo "║                                                          ║"
+    echo "║           📦 УСТАНОВЩИК ВЕБ-СЕРВИСА ТЕХПОДДЕРЖКИ          ║"
+    echo "║                      Version 1.0.0                        ║"
+    echo "╚══════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
 }
 
-log_error() {
-    echo -e "${RED}[✗] $1${NC}"
+print_step() {
+    echo -e "\n${MAGENTA}┌──────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${MAGENTA}│${NC} ${BOLD}📌 $1${NC}"
+    echo -e "${MAGENTA}└──────────────────────────────────────────────────────────┘${NC}\n"
 }
 
-log_info() {
-    echo -e "${BLUE}[→] $1${NC}"
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
-log_warning() {
-    echo -e "${YELLOW}[!] $1${NC}"
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
 }
 
-# Проверка запуска от root
+print_info() {
+    echo -e "${BLUE}ℹ️ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️ $1${NC}"
+}
+
+print_progress() {
+    echo -e "${CYAN}⚙️ $1${NC}"
+}
+
+# Проверка root
 if [[ $EUID -ne 0 ]]; then
-   log_error "Этот скрипт должен запускаться от root (sudo ./install_support_system.sh)"
-   exit 1
+    print_error "Скрипт должен запускаться от root!"
+    echo -e "${YELLOW}Используйте: sudo ./install.sh${NC}"
+    exit 1
 fi
 
-clear
-echo "========================================="
-echo "  Установка Support24_system"
-echo "========================================="
-echo ""
+print_banner
 
-# Получаем IP адрес сервера
+echo -e "${CYAN}🔍 Проверка окружения...${NC}\n"
 SERVER_IP=$(hostname -I | awk '{print $1}')
-
-log_info "Начинаю установку на сервере с IP: $SERVER_IP"
-log_info "Время установки: $(date)"
+print_info "IP адрес сервера: ${BOLD}$SERVER_IP${NC}"
+print_info "Время начала: $(date '+%d.%m.%Y %H:%M:%S')"
 echo ""
 
 # ============================================
-# 1. Обновление системы и установка пакетов
+# Шаг 1
 # ============================================
-log_info "Шаг 1/9: Обновление системы и установка пакетов..."
+print_step "1/10: Установка локализации и шрифтов"
 
+print_progress "Устанавливаю языковые пакеты..."
 apt-get update -qq
-apt-get upgrade -y -qq
-apt-get install -y -qq curl wget git apache2 php8.3 php8.3-mysql php8.3-mbstring php8.3-curl php8.3-zip php8.3-gd php8.3-xml libapache2-mod-php8.3
+apt-get install -y -qq language-pack-ru fonts-dejavu-core fontconfig
 
-log_success "Пакеты установлены"
+export LC_ALL=ru_RU.UTF-8
+export LANG=ru_RU.UTF-8
+locale-gen ru_RU.UTF-8 > /dev/null 2>&1
+update-locale LANG=ru_RU.UTF-8 > /dev/null 2>&1
+
+print_success "Локализация и шрифты установлены"
 
 # ============================================
-# 2. Скачивание проекта с GitHub
+# Шаг 2
 # ============================================
-log_info "Шаг 2/9: Скачивание проекта с GitHub..."
+print_step "2/10: Установка пакетов"
 
-# Удаляем старую папку, если есть
+print_progress "Устанавливаю Apache, PHP 8.3 и модули..."
+apt-get install -y -qq curl wget git apache2 \
+    php8.3 php8.3-mysql php8.3-mbstring php8.3-curl \
+    php8.3-zip php8.3-gd php8.3-xml php8.3-intl \
+    libapache2-mod-php8.3 2>/dev/null
+
+print_success "Все пакеты установлены"
+
+# ============================================
+# Шаг 3
+# ============================================
+print_step "3/10: Загрузка проекта с GitHub"
+
+print_progress "Клонирую репозиторий..."
 rm -rf /var/www/support_system
+git clone https://github.com/LeManONE/Support24_system.git /var/www/support_system 2>/dev/null
 
-# Клонируем репозиторий
-git clone https://github.com/LeManONE/Support24_system.git /var/www/support_system
-
-# Создаем недостающие папки
 mkdir -p /var/www/support_system/{images,articles,uploads,logs}
 mkdir -p /var/www/support_system/mysql/{data,config,logs}
 
-log_success "Проект скачан в /var/www/support_system"
+print_success "Проект загружен в /var/www/support_system"
 
 # ============================================
-# 3. Установка Docker и Docker Compose
+# Шаг 4
 # ============================================
-log_info "Шаг 3/9: Установка Docker..."
+print_step "4/10: Установка Docker"
 
-# Проверяем, установлен ли Docker
 if ! command -v docker &> /dev/null; then
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    print_progress "Docker не найден, устанавливаю..."
+    curl -fsSL https://get.docker.com -o get-docker.sh > /dev/null 2>&1
+    sh get-docker.sh > /dev/null 2>&1
     rm get-docker.sh
-    log_success "Docker установлен"
+    print_success "Docker установлен"
 else
-    log_success "Docker уже установлен"
+    print_success "Docker уже установлен"
 fi
 
-# Устанавливаем Docker Compose плагин
 if ! docker compose version &> /dev/null; then
+    print_progress "Устанавливаю Docker Compose..."
     apt-get install -y -qq docker-compose-plugin
-    log_success "Docker Compose установлен"
+    print_success "Docker Compose установлен"
 else
-    log_success "Docker Compose уже установлен"
+    print_success "Docker Compose уже установлен"
 fi
 
 # ============================================
-# 4. Создание docker-compose.yml
+# Шаг 5
 # ============================================
-log_info "Шаг 4/9: Настройка MySQL в Docker..."
+print_step "5/10: Настройка MySQL в Docker"
 
 cat > /var/www/support_system/docker-compose.yml << 'EOF'
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -126,38 +168,40 @@ services:
     command: --default-authentication-plugin=mysql_native_password
 EOF
 
-log_success "docker-compose.yml создан"
+print_success "Конфиг docker-compose.yml создан"
 
 # ============================================
-# 5. Запуск MySQL контейнера
+# Шаг 6
 # ============================================
-log_info "Шаг 5/9: Запуск MySQL в Docker..."
+print_step "6/10: Запуск MySQL контейнера"
 
 cd /var/www/support_system
 docker compose down -v 2>/dev/null || true
-docker compose up -d
+docker compose up -d > /dev/null 2>&1
 
-# Ждем запуска MySQL
-log_info "Ожидание запуска MySQL (30 секунд)..."
-sleep 30
+print_progress "Ожидание запуска MySQL (⏳ 30 секунд)..."
+for i in {30..1}; do
+    echo -ne "${CYAN}   Осталось $i секунд...${NC}\r"
+    sleep 1
+done
+echo ""
 
-# Проверяем, что MySQL работает
 if docker exec support_mysql mysql -u root -p'P@ssw0rd' -e "SELECT 1" &>/dev/null; then
-    log_success "MySQL запущен и работает"
+    print_success "MySQL запущен и работает"
 else
-    log_error "MySQL не запустился"
+    print_error "MySQL не запустился"
+    docker logs support_mysql --tail 20
     exit 1
 fi
 
 # ============================================
-# 6. Создание таблиц в БД
+# Шаг 7
 # ============================================
-log_info "Шаг 6/9: Создание таблиц в базе данных..."
+print_step "7/10: Создание базы данных и таблиц"
 
-# Генерируем хеш для пароля P@ssw0rd
 PASSWORD_HASH=$(php -r "echo password_hash('P@ssw0rd', PASSWORD_DEFAULT);")
 
-docker exec -i support_mysql mysql -u root -p'P@ssw0rd' support_system << EOF
+docker exec -i support_mysql mysql -u root -p'P@ssw0rd' support_system << EOF > /dev/null 2>&1
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -185,9 +229,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
     admin_response TEXT,
     responded_at TIMESTAMP NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_status (status),
-    INDEX idx_created (created_at)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS faq (
@@ -208,105 +250,69 @@ CREATE TABLE IF NOT EXISTS logs (
     details TEXT,
     ip_address VARCHAR(45),
     user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_action (action),
-    INDEX idx_created (created_at),
-    INDEX idx_user (user_id)
-);
-
-CREATE TABLE IF NOT EXISTS sessions (
-    session_id VARCHAR(128) PRIMARY KEY,
-    user_id INT,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NULL,
-    INDEX idx_expires (expires_at)
-);
-
-CREATE TABLE IF NOT EXISTS response_templates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Создаем админа
-DELETE FROM users WHERE username = 'admin';
+DELETE FROM users WHERE username IN ('admin', 'user1');
 INSERT INTO users (username, password, full_name, role, password_changed) 
 VALUES ('admin', '$PASSWORD_HASH', 'Главный Администратор', 'admin', FALSE);
 
--- Создаем тестового пользователя
-DELETE FROM users WHERE username = 'user1';
 INSERT INTO users (username, password, full_name, phone, local_ip, role, password_changed) 
 VALUES ('user1', '$PASSWORD_HASH', 'Иван Петров', '+79991234567', '192.168.1.100', 'user', FALSE);
 
--- Добавляем тестовые статьи FAQ
 INSERT INTO faq (title, description, image_path, article_file, sort_order) VALUES
 ('Не работает интернет', 'Проблемы с подключением к сети', '/images/no-internet.jpg', '/articles/no-internet.pdf', 1),
 ('Не включается компьютер', 'Компьютер не реагирует на кнопку питания', '/images/pc-off.jpg', '/articles/pc-off.docx', 2),
 ('Проблемы с почтой', 'Не получается отправить или получить письма', '/images/email.jpg', '/articles/email.pdf', 3),
 ('Принтер не печатает', 'Принтер не реагирует на команды печати', '/images/printer.jpg', '/articles/printer.pdf', 4);
-
--- Добавляем шаблоны ответов
-INSERT INTO response_templates (title, content) VALUES
-('Перезагрузка', 'Попробуйте перезагрузить компьютер. Это часто решает проблему.'),
-('Проверка кабелей', 'Проверьте, все ли кабели подключены плотно.'),
-('Обновление драйверов', 'Обновите драйверы устройства через диспетчер устройств.');
 EOF
 
-if [ $? -eq 0 ]; then
-    log_success "Таблицы созданы, пользователи добавлены"
-else
-    log_error "Ошибка при создании таблиц"
-    exit 1
-fi
+print_success "База данных и таблицы созданы"
+print_success "Пользователи созданы (admin / user1)"
 
 # ============================================
-# 7. Настройка config.php
+# Шаг 8
 # ============================================
-log_info "Шаг 7/9: Настройка конфигурации..."
+print_step "8/10: Настройка конфигурации"
 
 cat > /var/www/support_system/includes/config.php << 'EOF'
 <?php
-// Настройки базы данных
 define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
 define('DB_PASS', 'P@ssw0rd');
 define('DB_NAME', 'support_system');
 
-// Пути
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
 $host = $_SERVER['HTTP_HOST'];
 define('BASE_URL', $protocol . $host . '/');
 define('BASE_PATH', '/var/www/support_system/');
 
-// Версия системы
-define('VERSION', '1.0.0');
-
-// Настройки сессий
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_secure', 0);
-ini_set('session.cookie_samesite', 'Strict');
 
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Режим отладки
-define('DEBUG_MODE', false);
+header('Content-Type: text/html; charset=utf-8');
+mb_internal_encoding('UTF-8');
 ?>
 EOF
 
-log_success "config.php настроен"
+print_success "Файл config.php настроен"
 
 # ============================================
-# 8. Настройка Apache и прав
+# Шаг 9
 # ============================================
-log_info "Шаг 8/9: Настройка веб-сервера..."
+print_step "9/10: Настройка Apache"
 
-# Настраиваем виртуальный хост
+cat > /etc/apache2/conf-available/charset.conf << 'EOF'
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .php
+EOF
+a2enconf charset > /dev/null 2>&1
+
 cat > /etc/apache2/sites-available/support_system.conf << EOF
 <VirtualHost *:80>
     ServerAdmin admin@localhost
@@ -324,54 +330,90 @@ cat > /etc/apache2/sites-available/support_system.conf << EOF
 </VirtualHost>
 EOF
 
-# Отключаем дефолтный сайт, включаем наш
-a2dissite 000-default.conf 2>/dev/null || true
-a2ensite support_system.conf
-a2enmod rewrite
+a2dissite 000-default.conf > /dev/null 2>&1 || true
+a2ensite support_system.conf > /dev/null 2>&1
+a2enmod rewrite > /dev/null 2>&1
 
-# Устанавливаем права
 chown -R www-data:www-data /var/www/support_system
 chmod -R 755 /var/www/support_system
-chmod -R 777 /var/www/support_system/mysql/data 2>/dev/null || true
 
-# Перезапускаем Apache
 systemctl restart apache2
-
-log_success "Apache настроен"
-
-# ============================================
-# 9. Настройка автозапуска
-# ============================================
-log_info "Шаг 9/9: Настройка автозапуска..."
-
-systemctl enable docker
-systemctl enable apache2
-
-log_success "Сервисы добавлены в автозапуск"
+print_success "Apache настроен и перезапущен"
 
 # ============================================
-# Завершение
+# Шаг 10
+# ============================================
+print_step "10/10: Настройка автозапуска"
+
+systemctl enable docker > /dev/null 2>&1
+systemctl enable apache2 > /dev/null 2>&1
+
+print_success "Сервисы добавлены в автозапуск"
+
+# ============================================
+# ФИНАЛ
 # ============================================
 clear
-echo "========================================="
-echo "  УСТАНОВКА ЗАВЕРШЕНА УСПЕШНО!"
-echo "========================================="
+print_banner
+
 echo ""
-log_success "Веб-сервис Support24_system установлен!"
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                   ✅ УСТАНОВКА ЗАВЕРШЕНА!                   ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo "📋 Данные для входа:"
-echo "   🔗 Адрес: http://$SERVER_IP/login.php"
-echo "   👤 Логин: admin"
-echo "   🔑 Пароль: P@ssw0rd (будет запрошена смена при первом входе)"
+
+echo -e "${CYAN}┌─────────────────────────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}│${NC}  🚀 ВЕБ-СЕРВИС УСПЕШНО УСТАНОВЛЕН                           ${CYAN}│${NC}"
+echo -e "${CYAN}└─────────────────────────────────────────────────────────────┘${NC}"
 echo ""
-echo "🗄️ База данных:"
-echo "   MySQL в Docker: docker exec -it support_mysql mysql -u root -p'P@ssw0rd'"
+
+echo -e "${YELLOW}📋 ДАННЫЕ ДЛЯ ВХОДА:${NC}"
+echo -e "   🔗 ${BOLD}Адрес:${NC}  http://$SERVER_IP/login.php"
+echo -e "   👤 ${BOLD}Логин:${NC}  admin"
+echo -e "   🔑 ${BOLD}Пароль:${NC} P@ssw0rd ${RED}(ОБЯЗАТЕЛЬНО СМЕНИТЕ ПРИ ПЕРВОМ ВХОДЕ!)${NC}"
 echo ""
-echo "📁 Папка сайта: /var/www/support_system"
+
+echo -e "${YELLOW}🗄️ БАЗА ДАННЫХ:${NC}"
+echo -e "   🐳 ${BOLD}MySQL в Docker:${NC}"
+echo -e "   docker exec -it support_mysql mysql -u root -p'P@ssw0rd'"
 echo ""
-echo "🔄 Статус сервисов:"
-systemctl is-active --quiet docker && echo "   ✅ Docker: активен" || echo "   ❌ Docker: не активен"
-systemctl is-active --quiet apache2 && echo "   ✅ Apache: активен" || echo "   ❌ Apache: не активен"
-docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "support_mysql" && echo "   ✅ MySQL: активен" || echo "   ❌ MySQL: не активен"
+
+echo -e "${YELLOW}📁 ПАПКИ ПРОЕКТА:${NC}"
+echo -e "   📂 Сайт:        /var/www/support_system"
+echo -e "   📂 Логи:        /var/www/support_system/logs"
+echo -e "   📂 Загрузки:    /var/www/support_system/uploads"
 echo ""
-echo "========================================="
+
+echo -e "${YELLOW}🔄 СТАТУС СЕРВИСОВ:${NC}"
+if systemctl is-active --quiet docker; then
+    echo -e "   ${GREEN}✅ Docker: активен${NC}"
+else
+    echo -e "   ${RED}❌ Docker: не активен${NC}"
+fi
+
+if systemctl is-active --quiet apache2; then
+    echo -e "   ${GREEN}✅ Apache: активен${NC}"
+else
+    echo -e "   ${RED}❌ Apache: не активен${NC}"
+fi
+
+if docker ps --format "table {{.Names}}" 2>/dev/null | grep -q "support_mysql"; then
+    echo -e "   ${GREEN}✅ MySQL: активен${NC}"
+else
+    echo -e "   ${RED}❌ MySQL: не активен${NC}"
+fi
+echo ""
+
+echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║${NC}  💬 ПОЛУЧИТЬ ПОМОЩЬ ИЛИ ЗАДАТЬ ВОПРОС:                     ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}                                                           ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}     🔗 Telegram: ${BLUE}${BOLD}@artemsmvrv${NC}                              ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}     📧 Email:    support@example.com                        ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}     🌐 GitHub:   https://github.com/LeManONE/Support24_system ${CYAN}║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${GREEN}🎉 Спасибо за установку! Удачи с дипломом!${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+exit 0
