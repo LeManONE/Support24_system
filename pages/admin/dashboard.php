@@ -192,7 +192,7 @@ $users = $conn->query("SELECT id, full_name FROM users WHERE role = 'user' ORDER
                         <?php echo nl2br(htmlspecialchars(substr($ticket['problem_text'], 0, 150) . '...')); ?>
                     </div>
                     <div class="ticket-actions">
-                        <a href="view_ticket.php?id=<?php echo $ticket['id']; ?>" class="btn-small">👁 Просмотр</a>
+                    	<a href="view_ticket.php?id=<?php echo $ticket['id']; ?>" class="btn-small">👁 Просмотр</a>
                         <button class="btn-small btn-danger" onclick="deleteTicket(<?php echo $ticket['id']; ?>)">🗑 Удалить</button>
                     </div>
                 </div>
