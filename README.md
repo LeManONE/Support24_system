@@ -13,7 +13,7 @@
 
 ---
 
-<div align="center"> <img src="screenshots/logo.png" width="45%"> </div>
+<div align="center"> <img src="screenshots/logo.jpg" width="45%"> </div>
 
 ## 📌 О проекте
 
